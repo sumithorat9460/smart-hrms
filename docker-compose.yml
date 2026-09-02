@@ -1,0 +1,14 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: smart-hrms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: smart_hrms
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - smart_hrms_mysql:/var/lib/mysql
+volumes:
+  smart_hrms_mysql:

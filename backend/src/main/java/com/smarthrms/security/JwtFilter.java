@@ -1,0 +1,37 @@
+package com.smarthrms.security;
+
+import com.smarthrms.repository.UserRepository;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.*;
+
+@Component
+@RequiredArgsConstructor
+public class JwtFilter extends OncePerRequestFilter {
+    private final JwtService jwt;
+    private final UserRepository users;
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain) throws ServletException, IOException {
+        String h = req.getHeader("Authorization");
+        if (h != null && h.startsWith("Bearer ")) {
+            String token = h.substring(7);
+            if (jwt.valid(token)) {
+                String email = jwt.extractEmail(token);
+                users.findByEmailIgnoreCase(email).ifPresent(u -> {
+                    var auth = new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority("ROLE_" + u.getRole().name())));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                });
+            }
+        }
+        chain.doFilter(req, res);
+    }
+}
